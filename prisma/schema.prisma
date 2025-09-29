@@ -1,0 +1,71 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String?  @unique
+  name      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Relations
+  analytics      Analytics[]
+  bookmarks      Bookmark[]
+  fileProcesses  FileProcess[]
+}
+
+model Analytics {
+  id        String   @id @default(cuid())
+  toolName  String
+  count     Int      @default(1)
+  date      DateTime @default(now())
+  
+  // Relations
+  userId String?
+  user   User?    @relation(fields: [userId], references: [id])
+  
+  @@index([toolName, date])
+}
+
+model Bookmark {
+  id        String   @id @default(cuid())
+  toolName  String
+  createdAt DateTime @default(now())
+  
+  // Relations
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, toolName])
+}
+
+model FileProcess {
+  id           String   @id @default(cuid())
+  originalName String
+  fileSize     Int
+  fileType     String
+  processedType String?
+  status       String   @default("pending") // pending, processing, completed, failed
+  errorMessage String?
+  createdAt    DateTime @default(now())
+  completedAt  DateTime?
+  
+  // Relations
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id])
+  
+  @@index([status, createdAt])
+  @@index([fileType])
+}
